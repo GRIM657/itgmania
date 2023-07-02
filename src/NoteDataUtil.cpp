@@ -9,6 +9,7 @@
 #include "GameState.h"
 #include "RadarValues.h"
 #include "TimingData.h"
+#include "PrefsManager.h"
 
 #include <cmath>
 #include <cstddef>
@@ -749,19 +750,36 @@ void LightTransformHelper( const NoteData &in, NoteData &out, const std::vector<
 	}
 }
 
-// For every track enabled in "in", enable all tracks in "out".
 void NoteDataUtil::LoadTransformedLights( const NoteData &in, NoteData &out, int iNewNumTracks )
 {
-	// reset all notes
-	out.Init();
+	if( PREFSMAN->m_bLightsSimplifyBass)
+	{
+		// oITG implementation
+		NoteData bass;
+		bass.Init();
 
-	out.SetNumTracks( iNewNumTracks );
+		// copy from the marquee data, but slim down the notes.
+		// this makes it look more bass-ish and less like the original chart.
+		bass.CopyAll( in );
+		RemoveHoldNotes( bass );
+		Little( bass );
 
-	std::vector<int> aiTracks;
-	for( int i = 0; i < out.GetNumTracks(); ++i )
-		aiTracks.push_back( i );
+		LoadTransformedLightsFromTwo( in, bass, out );
+	}
+	else
+	{
+		//original implementation: For every track enabled in "in", enable all tracks in "out".
+		// reset all notes
+		out.Init();
 
-	LightTransformHelper( in, out, aiTracks );
+		out.SetNumTracks( iNewNumTracks );
+
+		std::vector<int> aiTracks;
+		for( int i = 0; i < out.GetNumTracks(); ++i )
+			aiTracks.push_back( i );
+
+		LightTransformHelper( in, out, aiTracks );
+	}
 }
 
 // This transform is specific to StepsType_lights_cabinet.
